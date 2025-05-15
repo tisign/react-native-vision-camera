@@ -365,9 +365,41 @@ extension CameraSession {
     // Audio Input (Microphone)
     if enableAudio {
       VisionLogger.log(level: .info, message: "Adding Audio input...")
-      guard let microphone = AVCaptureDevice.default(for: .audio) else {
+      
+      var microphone: AVCaptureDevice?
+      
+      // First, check for external microphones (USB, Lightning, etc.)
+      let allMicrophones = AVCaptureDevice.devices(for: .audio)
+      for device in allMicrophones {
+        // External devices typically don't have a specific position
+        if device.position == .unspecified && device.deviceType != .builtInMicrophone {
+          microphone = device
+          VisionLogger.log(level: .info, message: "Using external microphone: \(device.localizedName)")
+          break
+        }
+      }
+      
+      // If no external microphone, look for back microphone
+      if microphone == nil {
+        for device in allMicrophones {
+          if device.position == .back {
+            microphone = device
+            VisionLogger.log(level: .info, message: "Using back microphone: \(device.localizedName)")
+            break
+          }
+        }
+      }
+      
+      // Fallback to default microphone
+      if microphone == nil {
+        microphone = AVCaptureDevice.default(for: .audio)
+        VisionLogger.log(level: .info, message: "Using default microphone")
+      }
+      
+      guard let microphone = microphone else {
         throw CameraError.device(.microphoneUnavailable)
       }
+      
       let input = try AVCaptureDeviceInput(device: microphone)
       guard audioCaptureSession.canAddInput(input) else {
         throw CameraError.parameter(.unsupportedInput(inputDescriptor: "audio-input"))
