@@ -17,53 +17,52 @@ extension CameraSession {
    Background audio is allowed to play on speakers or bluetooth speakers.
    */
   final func activateAudioSession() throws {
-    VisionLogger.log(level: .info, message: "Activating Audio Session...")
+      VisionLogger.log(level: .info, message: "Activating Audio Session...")
 
-    do {
-      let audioSession = AVAudioSession.sharedInstance()
+      do {
+          let audioSession = AVAudioSession.sharedInstance()
 
-      try audioSession.updateCategory(AVAudioSession.Category.playAndRecord,
-                                      mode: .videoRecording,
-                                      options: [.mixWithOthers,
-                                                .allowBluetoothA2DP,
-                                                .defaultToSpeaker,
-                                                .allowAirPlay])
+          // Set category and mode
+          try audioSession.updateCategory(AVAudioSession.Category.playAndRecord,
+                                          mode: .videoRecording,
+                                          options: [.mixWithOthers,
+                                                    .allowBluetoothA2DP,
+                                                    .defaultToSpeaker,
+                                                    .allowAirPlay])
 
-      if #available(iOS 14.5, *) {
-        try audioSession.setPrefersNoInterruptionsFromSystemAlerts(true)
+          if #available(iOS 14.5, *) {
+              try audioSession.setPrefersNoInterruptionsFromSystemAlerts(true)
+          }
+
+          if #available(iOS 13.0, *) {
+              try audioSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
+          }
+
+          // Activate the audio session
+          try audioSession.setActive(true)
+          
+          // Force audio output to internal speakers
+          try audioSession.overrideOutputAudioPort(.speaker)
+
+          audioCaptureSession.startRunning()
+          VisionLogger.log(level: .info, message: "Audio Session activated!")
+          
+          // Log final microphone configuration for verification
+          if let currentInput = audioSession.preferredInput {
+              VisionLogger.log(level: .info, message: "Active preferred input: \(currentInput.portName)")
+              if let currentDataSource = currentInput.preferredDataSource {
+                  VisionLogger.log(level: .info, message: "Active preferred data source: \(currentDataSource.dataSourceName), Orientation: \(currentDataSource.orientation?.rawValue ?? "nil")")
+              }
+          }
+      } catch let error as NSError {
+          VisionLogger.log(level: .error, message: "Failed to activate audio session! Error \(error.code): \(error.description)")
+          switch error.code {
+          case 561_017_449:
+              throw CameraError.session(.audioInUseByOtherApp)
+          default:
+              throw CameraError.session(.audioSessionFailedToActivate)
+          }
       }
-
-      if #available(iOS 13.0, *) {
-        try audioSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
-      }
-
-      // Force audio output to internal speakers
-      try audioSession.setActive(true)
-      
-      // Override any output routing to force internal speakers
-      try audioSession.overrideOutputAudioPort(.speaker)
-      
-      // Optionally, you can also try to set the preferred output
-      // This ensures that even if external speakers are connected, we use internal
-      let builtInSpeaker = AVAudioSession.sharedInstance().availableOutputs?.first { output in
-        output.portType == .builtInSpeaker
-      }
-      
-      if let builtInSpeaker = builtInSpeaker {
-        try audioSession.setPreferredOutput(builtInSpeaker)
-      }
-
-      audioCaptureSession.startRunning()
-      VisionLogger.log(level: .info, message: "Audio Session activated!")
-    } catch let error as NSError {
-      VisionLogger.log(level: .error, message: "Failed to activate audio session! Error \(error.code): \(error.description)")
-      switch error.code {
-      case 561_017_449:
-        throw CameraError.session(.audioInUseByOtherApp)
-      default:
-        throw CameraError.session(.audioSessionFailedToActivate)
-      }
-    }
   }
 
 
