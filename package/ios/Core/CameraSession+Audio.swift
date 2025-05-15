@@ -30,13 +30,27 @@ extension CameraSession {
                                                 .allowAirPlay])
 
       if #available(iOS 14.5, *) {
-        // prevents the audio session from being interrupted by a phone call
         try audioSession.setPrefersNoInterruptionsFromSystemAlerts(true)
       }
 
       if #available(iOS 13.0, *) {
-        // allow system sounds (notifications, calls, music) to play while recording
         try audioSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
+      }
+
+      // Force audio output to internal speakers
+      try audioSession.setActive(true)
+      
+      // Override any output routing to force internal speakers
+      try audioSession.overrideOutputAudioPort(.speaker)
+      
+      // Optionally, you can also try to set the preferred output
+      // This ensures that even if external speakers are connected, we use internal
+      let builtInSpeaker = AVAudioSession.sharedInstance().availableOutputs?.first { output in
+        output.portType == .builtInSpeaker
+      }
+      
+      if let builtInSpeaker = builtInSpeaker {
+        try audioSession.setPreferredOutput(builtInSpeaker)
       }
 
       audioCaptureSession.startRunning()
@@ -51,6 +65,7 @@ extension CameraSession {
       }
     }
   }
+
 
   final func deactivateAudioSession() {
     VisionLogger.log(level: .info, message: "Deactivating Audio Session...")
