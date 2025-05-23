@@ -341,7 +341,7 @@ extension CameraSession {
   /**
    Configures the Audio Capture Session with an audio input and audio data output.
    */
-func configureAudioSession(configuration: CameraConfiguration) throws {
+  func configureAudioSession(configuration: CameraConfiguration) throws {
     VisionLogger.log(level: .info, message: "Configuring Audio Session...")
 
     // Prevent iOS from automatically configuring the Audio Session for us
@@ -350,131 +350,48 @@ func configureAudioSession(configuration: CameraConfiguration) throws {
 
     // Check microphone permission
     if enableAudio {
-        let audioPermissionStatus = AVCaptureDevice.authorizationStatus(for: .audio)
-        if audioPermissionStatus != .authorized {
-            throw CameraError.permission(.microphone)
-        }
+      let audioPermissionStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+      if audioPermissionStatus != .authorized {
+        throw CameraError.permission(.microphone)
+      }
     }
 
     // Remove all current inputs
     for input in audioCaptureSession.inputs {
-        audioCaptureSession.removeInput(input)
+      audioCaptureSession.removeInput(input)
     }
     audioDeviceInput = nil
 
     // Audio Input (Microphone)
     if enableAudio {
-        VisionLogger.log(level: .info, message: "Adding Audio input...")
-        
-        var microphone: AVCaptureDevice?
-        
-        // First, check for external microphones (USB, Lightning, etc.)
-        let allMicrophones = AVCaptureDevice.devices(for: .audio)
-        VisionLogger.log(level: .info, message: "Found \(allMicrophones.count) audio devices:")
-        for (index, device) in allMicrophones.enumerated() {
-            VisionLogger.log(level: .info, message: "Device \(index): \(device.localizedName), Type: \(device.deviceType.rawValue), Position: \(device.position.rawValue)")
-        }
-        
-        // Look for external microphones
-        for device in allMicrophones {
-            // External devices typically don't have a specific position and aren't built-in
-            if device.position == .unspecified && device.deviceType != .builtInMicrophone {
-                microphone = device
-                VisionLogger.log(level: .info, message: "Using external microphone: \(device.localizedName)")
-                break
-            }
-        }
-        
-        // If no external microphone, use the built-in microphone
-        if microphone == nil {
-            microphone = AVCaptureDevice.default(for: .audio)
-            VisionLogger.log(level: .info, message: "Using built-in microphone: \(microphone?.localizedName ?? "Unknown")")
-        }
-        
-        guard let microphone = microphone else {
-            throw CameraError.device(.microphoneUnavailable)
-        }
-        
-        let input = try AVCaptureDeviceInput(device: microphone)
-        guard audioCaptureSession.canAddInput(input) else {
-            throw CameraError.parameter(.unsupportedInput(inputDescriptor: "audio-input"))
-        }
-        audioCaptureSession.addInput(input)
-        audioDeviceInput = input
-        
-        // Configure microphone preferences for built-in microphones
-        if microphone.deviceType == .builtInMicrophone {
-            try configureMicrophonePreferences()
-        }
+      VisionLogger.log(level: .info, message: "Adding Audio input...")
+      guard let microphone = AVCaptureDevice.default(for: .audio) else {
+        throw CameraError.device(.microphoneUnavailable)
+      }
+      let input = try AVCaptureDeviceInput(device: microphone)
+      guard audioCaptureSession.canAddInput(input) else {
+        throw CameraError.parameter(.unsupportedInput(inputDescriptor: "audio-input"))
+      }
+      audioCaptureSession.addInput(input)
+      audioDeviceInput = input
     }
 
     // Remove all current outputs
     for output in audioCaptureSession.outputs {
-        audioCaptureSession.removeOutput(output)
+      audioCaptureSession.removeOutput(output)
     }
     audioOutput = nil
 
     // Audio Output
     if enableAudio {
-        VisionLogger.log(level: .info, message: "Adding Audio Data output...")
-        let output = AVCaptureAudioDataOutput()
-        guard audioCaptureSession.canAddOutput(output) else {
-            throw CameraError.parameter(.unsupportedOutput(outputDescriptor: "audio-output"))
-        }
-        output.setSampleBufferDelegate(self, queue: CameraQueues.audioQueue)
-        audioCaptureSession.addOutput(output)
-        audioOutput = output
+      VisionLogger.log(level: .info, message: "Adding Audio Data output...")
+      let output = AVCaptureAudioDataOutput()
+      guard audioCaptureSession.canAddOutput(output) else {
+        throw CameraError.parameter(.unsupportedOutput(outputDescriptor: "audio-output"))
+      }
+      output.setSampleBufferDelegate(self, queue: CameraQueues.audioQueue)
+      audioCaptureSession.addOutput(output)
+      audioOutput = output
     }
-}
-
-// MARK: - Private Helper Methods
-private func configureMicrophonePreferences() throws {
-    VisionLogger.log(level: .info, message: "Configuring microphone preferences...")
-    
-    let audioSession = AVAudioSession.sharedInstance()
-    
-    // Log available inputs and their data sources
-    if let availableInputs = audioSession.availableInputs {
-        VisionLogger.log(level: .info, message: "Available audio inputs: \(availableInputs.count)")
-        
-        for input in availableInputs {
-            VisionLogger.log(level: .info, message: "Input: \(input.portName), Type: \(input.portType.rawValue)")
-            if let dataSources = input.dataSources {
-                for dataSource in dataSources {
-                    VisionLogger.log(level: .info, message: "  DataSource: \(dataSource.dataSourceName), Orientation: \(dataSource.orientation?.rawValue ?? "nil")")
-                }
-            }
-        }
-        
-        // Find and configure built-in microphone
-        for input in availableInputs {
-            if input.portType == .builtInMic {
-                // Set this as the preferred input
-                try audioSession.setPreferredInput(input)
-                VisionLogger.log(level: .info, message: "Set preferred input to: \(input.portName)")
-                
-                // Look for back microphone data source
-                if let dataSources = input.dataSources {
-                    // First try to find back orientation
-                    if let backDataSource = dataSources.first(where: { $0.orientation == .back }) {
-                        try input.setPreferredDataSource(backDataSource)
-                        VisionLogger.log(level: .info, message: "Selected back microphone data source: \(backDataSource.dataSourceName)")
-                    } else {
-                        // Fallback to first available data source
-                        VisionLogger.log(level: .info, message: "No back microphone found, using default data source")
-                    }
-                }
-                
-                // Verify the configuration
-                if let currentInput = audioSession.preferredInput {
-                    VisionLogger.log(level: .info, message: "Configured preferred input: \(currentInput.portName)")
-                    if let currentDataSource = currentInput.preferredDataSource {
-                        VisionLogger.log(level: .info, message: "Configured preferred data source: \(currentDataSource.dataSourceName), Orientation: \(currentDataSource.orientation?.rawValue ?? "nil")")
-                    }
-                }
-                break
-            }
-        }
-    }
-}
+  }
 }
