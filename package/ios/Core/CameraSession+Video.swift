@@ -108,13 +108,11 @@ extension CameraSession {
            let audioInput = self.audioDeviceInput {
           VisionLogger.log(level: .info, message: "Enabling Audio for Recording...")
           // Activate Audio Session asynchronously
-          CameraQueues.audioQueue.async {
             do {
               try self.activateAudioSession()
             } catch {
               self.onConfigureError(error)
             }
-          }
 
           // Initialize audio asset writer
           let audioSettings = audioOutput.recommendedAudioSettingsForAssetWriter(writingTo: options.fileType)

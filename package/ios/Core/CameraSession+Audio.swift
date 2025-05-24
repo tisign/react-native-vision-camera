@@ -22,6 +22,9 @@ extension CameraSession {
     do {
       let audioSession = AVAudioSession.sharedInstance()
 
+      try audioSession.overrideOutputAudioPort(.none)
+      print("Successfully restored output port to default")
+
       try audioSession.updateCategory(AVAudioSession.Category.playAndRecord,
                                       mode: .videoRecording,
                                       options: [.mixWithOthers,
