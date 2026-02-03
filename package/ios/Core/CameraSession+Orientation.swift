@@ -41,11 +41,6 @@ extension CameraSession: OrientationManagerDelegate {
    Updates the connected PreviewView's output orientation angle
    */
   func configurePreviewOrientation(_ previewOrientation: Orientation) {
-    guard #available(iOS 13.0, *) else {
-      // .connections is only available on iOS 13+.
-      return
-    }
-
     VisionLogger.log(level: .info, message: "Updating Preview rotation: \(previewOrientation)...")
 
     // update the orientation for each preview layer that is connected to this capture session

@@ -93,14 +93,10 @@ final class CameraDevicesManager: RCTEventEmitter {
     deviceTypes.append(.builtInWideAngleCamera)
     deviceTypes.append(.builtInTelephotoCamera)
     deviceTypes.append(.builtInTrueDepthCamera)
-    if #available(iOS 13.0, *) {
-      deviceTypes.append(.builtInTripleCamera)
-      deviceTypes.append(.builtInDualWideCamera)
-      deviceTypes.append(.builtInUltraWideCamera)
-    }
-    if #available(iOS 15.4, *) {
-      deviceTypes.append(.builtInLiDARDepthCamera)
-    }
+    deviceTypes.append(.builtInTripleCamera)
+    deviceTypes.append(.builtInDualWideCamera)
+    deviceTypes.append(.builtInUltraWideCamera)
+    deviceTypes.append(.builtInLiDARDepthCamera)
 
     if #available(iOS 17.0, *) {
       // This is only reported if `NSCameraUseExternalDeviceType` is set to true in Info.plist,

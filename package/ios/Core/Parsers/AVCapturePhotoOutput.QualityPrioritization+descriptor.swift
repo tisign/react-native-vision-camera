@@ -9,7 +9,6 @@
 import AVFoundation
 import Foundation
 
-@available(iOS 13.0, *)
 extension AVCapturePhotoOutput.QualityPrioritization {
   init(fromQualityBalance qualityBalance: QualityBalance) {
     switch qualityBalance {

@@ -42,30 +42,20 @@ extension CameraSession {
       let photoSettings = AVCapturePhotoSettings()
 
       // set photo resolution
-      if #available(iOS 16.0, *) {
-        photoSettings.maxPhotoDimensions = photoOutput.maxPhotoDimensions
-      } else {
-        photoSettings.isHighResolutionPhotoEnabled = photoOutput.isHighResolutionCaptureEnabled
-      }
+      photoSettings.maxPhotoDimensions = photoOutput.maxPhotoDimensions
 
       // depth data
       photoSettings.isDepthDataDeliveryEnabled = photoOutput.isDepthDataDeliveryEnabled
-      if #available(iOS 12.0, *) {
-        photoSettings.isPortraitEffectsMatteDeliveryEnabled = photoOutput.isPortraitEffectsMatteDeliveryEnabled
-      }
+      photoSettings.isPortraitEffectsMatteDeliveryEnabled = photoOutput.isPortraitEffectsMatteDeliveryEnabled
 
       // quality prioritization
-      if #available(iOS 13.0, *) {
-        photoSettings.photoQualityPrioritization = photoOutput.maxPhotoQualityPrioritization
-      }
+      photoSettings.photoQualityPrioritization = photoOutput.maxPhotoQualityPrioritization
 
       // red-eye reduction
       photoSettings.isAutoRedEyeReductionEnabled = options.enableAutoRedEyeReduction
 
       // distortion correction
-      if #available(iOS 14.1, *) {
-        photoSettings.isAutoContentAwareDistortionCorrectionEnabled = options.enableAutoDistortionCorrection
-      }
+      photoSettings.isAutoContentAwareDistortionCorrectionEnabled = options.enableAutoDistortionCorrection
 
       // flash
       if options.flash != .off {

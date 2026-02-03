@@ -48,10 +48,6 @@ extension AVCaptureDevice.Format {
   }
 
   private static func getAllVideoStabilizationModes() -> [AVCaptureVideoStabilizationMode] {
-    var modes: [AVCaptureVideoStabilizationMode] = [.auto, .cinematic, .off, .standard]
-    if #available(iOS 13, *) {
-      modes.append(.cinematicExtended)
-    }
-    return modes
+    return [.auto, .cinematic, .off, .standard, .cinematicExtended]
   }
 }

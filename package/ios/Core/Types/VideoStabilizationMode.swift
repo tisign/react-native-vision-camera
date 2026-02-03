@@ -51,11 +51,7 @@ enum VideoStabilizationMode: String, JSUnionValue {
     case .cinematic:
       return .cinematic
     case .cinematicExtended:
-      if #available(iOS 13.0, *) {
-        return .cinematicExtended
-      } else {
-        return .cinematic
-      }
+      return .cinematicExtended
     case .auto:
       return .auto
     }

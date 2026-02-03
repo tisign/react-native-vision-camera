@@ -32,15 +32,11 @@ extension CameraSession {
                                                 .defaultToSpeaker,
                                                 .allowAirPlay])
 
-      if #available(iOS 14.5, *) {
-        // prevents the audio session from being interrupted by a phone call
-        try audioSession.setPrefersNoInterruptionsFromSystemAlerts(true)
-      }
+      // prevents the audio session from being interrupted by a phone call
+      try audioSession.setPrefersNoInterruptionsFromSystemAlerts(true)
 
-      if #available(iOS 13.0, *) {
-        // allow system sounds (notifications, calls, music) to play while recording
-        try audioSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
-      }
+      // allow system sounds (notifications, calls, music) to play while recording
+      try audioSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
 
       audioCaptureSession.startRunning()
       VisionLogger.log(level: .info, message: "Audio Session activated!")
@@ -60,6 +56,12 @@ extension CameraSession {
 
     audioCaptureSession.stopRunning()
     VisionLogger.log(level: .info, message: "Audio Session deactivated!")
+
+        do {
+        try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    } catch {
+        VisionLogger.log(level: .error, message: "Failed to deactivate audio session: \(error.localizedDescription)")
+    }
   }
 
   @objc
@@ -97,4 +99,57 @@ extension CameraSession {
       ()
     }
   }
+
+  private func _activateAudioSession(retryCount: Int = 0, completion: @escaping (Error?) -> Void) {
+    VisionLogger.log(level: .info, message: "Attempting to activate Audio Session (Attempt \(retryCount + 1))...")
+
+    guard retryCount < 5 else {
+        VisionLogger.log(level: .error, message: "Failed to activate audio session after 5 attempts.")
+        completion(CameraError.session(.audioSessionFailedToActivate))
+        return
+    }
+
+    do {
+        let audioSession = AVAudioSession.sharedInstance()
+        
+        try audioSession.overrideOutputAudioPort(.none)
+        print("Successfully restored output port to default")
+
+        try audioSession.setCategory(.playAndRecord,
+                                    mode: .videoRecording,
+                                    options: [.mixWithOthers,
+                                              .allowBluetoothA2DP,
+                                              .defaultToSpeaker,
+                                              .allowAirPlay])
+
+        try audioSession.setPrefersNoInterruptionsFromSystemAlerts(true)
+        try audioSession.setAllowHapticsAndSystemSoundsDuringRecording(true)
+        
+        try audioSession.setActive(true)
+        
+        if !audioCaptureSession.isRunning {
+            audioCaptureSession.startRunning()
+        }
+
+        VisionLogger.log(level: .info, message: "Audio Session activated successfully!")
+        completion(nil)
+    } catch let error as NSError {
+        // Error code 561017449 is AVAudioSession.ErrorCode.cannotStartPlaying
+        // This is the error thrown when the session is in use by another process (or being deactivated)
+        if error.code == 561017449 {
+            VisionLogger.log(level: .warning, message: "Audio session is busy, will retry...")
+            // Wait 100ms and try again. This should be enough time for the other
+            // library's deactivation to complete.
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+                self._activateAudioSession(retryCount: retryCount + 1, completion: completion)
+            }
+        } else {
+            VisionLogger.log(level: .warning, message: "Configuration will not work, will retry...")
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+                self._activateAudioSession(retryCount: retryCount + 1, completion: completion)
+            }
+        }
+    }
+}
+
 }

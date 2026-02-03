@@ -67,18 +67,16 @@ final class PreviewView: UIView {
     videoPreviewLayer.session = session
     videoPreviewLayer.videoGravity = .resizeAspectFill
 
-    if #available(iOS 13.0, *) {
-      isPreviewingObserver = videoPreviewLayer.observe(\.isPreviewing, changeHandler: { [weak self] layer, _ in
-        guard let self else { return }
-        if layer.isPreviewing {
-          VisionLogger.log(level: .info, message: "Preview Layer started previewing.")
-          self.delegate?.onPreviewStarted()
-        } else {
-          VisionLogger.log(level: .info, message: "Preview Layer stopped previewing.")
-          self.delegate?.onPreviewStopped()
-        }
-      })
-    }
+    isPreviewingObserver = videoPreviewLayer.observe(\.isPreviewing, changeHandler: { [weak self] layer, _ in
+      guard let self else { return }
+      if layer.isPreviewing {
+        VisionLogger.log(level: .info, message: "Preview Layer started previewing.")
+        self.delegate?.onPreviewStarted()
+      } else {
+        VisionLogger.log(level: .info, message: "Preview Layer stopped previewing.")
+        self.delegate?.onPreviewStopped()
+      }
+    })
   }
 
   @available(*, unavailable)

@@ -14,10 +14,8 @@ extension AVCaptureDevice.DeviceType {
    Gets a descriptor if this is a physical device (wide, ultra-wide and telephoto), or "unknown-camera" otherwise (TrueDepth, LiDAR, InfraRed, USB, ..)
    */
   var physicalDeviceDescriptor: String {
-    if #available(iOS 13.0, *) {
-      if self == .builtInUltraWideCamera {
-        return "ultra-wide-angle-camera"
-      }
+    if self == .builtInUltraWideCamera {
+      return "ultra-wide-angle-camera"
     }
     switch self {
     case .builtInTelephotoCamera:

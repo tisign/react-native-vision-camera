@@ -79,10 +79,8 @@ extension CameraSession {
       captureSession.addOutput(photoOutput)
 
       // 2. Configure
-      if #available(iOS 13.0, *) {
-        let qualityPrioritization = AVCapturePhotoOutput.QualityPrioritization(fromQualityBalance: photo.qualityBalance)
-        photoOutput.maxPhotoQualityPrioritization = qualityPrioritization
-      }
+      let qualityPrioritization = AVCapturePhotoOutput.QualityPrioritization(fromQualityBalance: photo.qualityBalance)
+      photoOutput.maxPhotoQualityPrioritization = qualityPrioritization
       if photoOutput.isDepthDataDeliverySupported {
         photoOutput.isDepthDataDeliveryEnabled = photo.enableDepthData
       }
@@ -235,11 +233,7 @@ extension CameraSession {
     // Configure the PhotoOutput Settings to use the given max-resolution.
     // We need to run this after device.activeFormat has been set, otherwise the resolution is different.
     let format = videoDeviceInput.device.activeFormat
-    if #available(iOS 16.0, *) {
-      photoOutput.maxPhotoDimensions = format.photoDimensions
-    } else {
-      photoOutput.isHighResolutionCaptureEnabled = true
-    }
+    photoOutput.maxPhotoDimensions = format.photoDimensions
   }
 
   // pragma MARK: Side-Props
